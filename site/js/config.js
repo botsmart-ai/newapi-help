@@ -1,16 +1,19 @@
 /* ============================================================
    站点配置 — 每个部署各自维护，互不关联
    ------------------------------------------------------------
-   复用本页面时，只需修改这一个文件：
-   - baseUrl：留空 = 自动用当前访问域名（同域反代场景，推荐）；
-              或显式填写 API 域名以覆盖（不同域部署时）
-   - brandName：顶栏品牌名。留空 = 只显示中性文案，不强调任何品牌
-   - title：浏览器标签页标题
-   - footerText：页脚文案
+   originMap：访问域名 → API base URL 的显式映射表。
+     key   = 文档站的访问 origin（完整，含协议，不含末尾斜杠）
+     value = 该站对应的 API base URL
+   未在表中命中时，自动把访问域名的二级子域替换为 api。
+   例：https://apihelp.chinarouter.net → https://api.chinarouter.net
+   本地 file:// 预览时使用占位 https://api.example.com。
    ============================================================ */
 window.SITE_CONFIG = {
-  baseUrl: "",
-  brandName: "",
-  title: "API 接入文档",
+  originMap: {
+    "https://apihelp.botsmart.net":   "https://kjapi.botsmart.net",
+    "https://apihelp.chinarouter.net": "https://api.chinarouter.net"
+  },
+  brandName:  "",
+  title:      "API 接入文档",
   footerText: "客户接入文档"
 };

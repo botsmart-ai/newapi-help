@@ -11,10 +11,25 @@
   (function applyConfig() {
     var cfg = window.SITE_CONFIG || {};
     var PLACEHOLDER = "https://api.example.com";
-    // base url 优先级：config.baseUrl ＞ 当前访问域名(同域反代) ＞ 占位符(本地 file:// 预览)
-    var base = (cfg.baseUrl || "").trim();
-    if (!base) {
-      base = /^https?:/i.test(location.origin) ? location.origin : PLACEHOLDER;
+
+    // base url 解析：
+    // 1. originMap 命中当前 origin → 用映射值
+    // 2. 未命中且是 http(s) → 把二级子域替换为 api
+    //    例：https://apihelp.chinarouter.net → https://api.chinarouter.net
+    // 3. 本地 file:// 预览 → 占位符（页面可渲染，不暴露真实域名）
+    var map = cfg.originMap || {};
+    var origin = /^https?:/i.test(location.origin) ? location.origin : "";
+    var base;
+
+    if (origin && map[origin]) {
+      // 命中映射表
+      base = map[origin];
+    } else if (origin) {
+      // 未命中：把子域部分替换为 api
+      // https://foo.bar.com → https://api.bar.com
+      base = origin.replace(/^(https?:\/\/)[^.]+\./, "$1api.");
+    } else {
+      base = PLACEHOLDER;
     }
     base = base.replace(/\/+$/, "");
 
