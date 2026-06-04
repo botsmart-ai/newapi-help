@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>API 接入文档 · 跨境BotAPI</title>
+<title>API 接入文档</title>
 <meta name="description" content="统一接口接入 Claude、GPT、Gemini、DeepSeek、GLM、Kimi、Qwen 等主流大模型，含文本、图片、视频、TTS 调用示例。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="css/style.css">
+<script src="js/config.js"></script>
 <script>
   // 防主题闪烁：在样式应用前确定主题（localStorage 优先，否则跟随系统）
   (function () {
@@ -26,7 +27,7 @@
   <div class="topbar-inner">
     <a class="brand" href="#overview">
       <span class="brand-mark">API</span>
-      <span class="brand-name">跨境BotAPI · 接入文档</span>
+      <span class="brand-name">API 接入文档</span>
     </a>
     <div class="topbar-actions">
       <button id="menuToggle" class="icon-btn only-mobile" aria-label="菜单">☰</button>
@@ -84,7 +85,7 @@
       <div class="info-grid">
         <div class="info-card">
           <div class="info-label">Base URL</div>
-          <div class="info-value"><code>https://kjapi.botsmart.net</code></div>
+          <div class="info-value"><code>https://api.example.com</code></div>
         </div>
         <div class="info-card">
           <div class="info-label">鉴权方式</div>
@@ -110,7 +111,7 @@
         <div class="tab-bar">
           <button class="tab-btn active" data-lang="curl">cURL</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/models" \
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1/models" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
       </div>
     </section>
@@ -192,7 +193,7 @@
           <button class="tab-btn active" data-lang="curl">cURL</button>
           <button class="tab-btn" data-lang="python">Python</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/messages" \
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1/messages" \
   -H "x-api-key: &lt;YOUR_API_KEY&gt;" \
   -H "anthropic-version: 2023-06-01" \
   -H "content-type: application/json" \
@@ -206,7 +207,7 @@
         <div class="tab-panel" data-lang="python"><pre><code>import requests
 
 resp = requests.post(
-    "https://kjapi.botsmart.net/v1/messages",
+    "https://api.example.com/v1/messages",
     headers={
         "x-api-key": "&lt;YOUR_API_KEY&gt;",
         "anthropic-version": "2023-06-01",
@@ -236,7 +237,7 @@ print(resp.json()["content"][0]["text"])</code></pre></div>
           <button class="tab-btn active" data-lang="curl">cURL</button>
           <button class="tab-btn" data-lang="python">Python（OpenAI SDK）</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/chat/completions" \
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1/chat/completions" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -250,7 +251,7 @@ print(resp.json()["content"][0]["text"])</code></pre></div>
 
 client = OpenAI(
     api_key="&lt;YOUR_API_KEY&gt;",
-    base_url="https://kjapi.botsmart.net/v1",
+    base_url="https://api.example.com/v1",
 )
 
 resp = client.chat.completions.create(
@@ -278,7 +279,7 @@ print(resp.choices[0].message.content)</code></pre></div>
           <button class="tab-btn active" data-lang="curl">cURL</button>
           <button class="tab-btn" data-lang="python">Python</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1beta/models/gemini-3.5-flash:generateContent" \
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1beta/models/gemini-3.5-flash:generateContent" \
   -H "x-goog-api-key: &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -293,7 +294,7 @@ print(resp.choices[0].message.content)</code></pre></div>
         <div class="tab-panel" data-lang="python"><pre><code>import requests
 
 resp = requests.post(
-    "https://kjapi.botsmart.net/v1beta/models/gemini-3.5-flash:generateContent",
+    "https://api.example.com/v1beta/models/gemini-3.5-flash:generateContent",
     headers={
         "x-goog-api-key": "&lt;YOUR_API_KEY&gt;",
         "Content-Type": "application/json",
@@ -326,7 +327,7 @@ print(resp.json()["candidates"][0]["content"]["parts"][0]["text"])</code></pre><
           <button class="tab-btn active" data-lang="curl">cURL</button>
           <button class="tab-btn" data-lang="python">Python</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/images/generations" \
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1/images/generations" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -338,7 +339,7 @@ print(resp.json()["candidates"][0]["content"]["parts"][0]["text"])</code></pre><
 import requests
 
 resp = requests.post(
-    "https://kjapi.botsmart.net/v1/images/generations",
+    "https://api.example.com/v1/images/generations",
     headers={
         "Authorization": "Bearer &lt;YOUR_API_KEY&gt;",
         "Content-Type": "application/json",
@@ -364,7 +365,7 @@ with open("output.png", "wb") as f:
         <div class="tab-bar">
           <button class="tab-btn active" data-lang="curl">cURL</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1beta/models/gemini-3.1-flash-image-preview:generateContent" \
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent" \
   -H "x-goog-api-key: &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -419,7 +420,7 @@ with open("output.png", "wb") as f:
           <button class="tab-btn" data-lang="edit">视频编辑</button>
           <button class="tab-btn" data-lang="query">查询任务</button>
         </div>
-        <div class="tab-panel active" data-lang="t2v"><pre><code>curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+        <div class="tab-panel active" data-lang="t2v"><pre><code>curl -X POST "https://api.example.com/v1/videos" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -435,7 +436,7 @@ with open("output.png", "wb") as f:
     }
   }'</code></pre></div>
         <div class="tab-panel" data-lang="i2v"><pre><code># 图片必须通过公网可访问 URL 提供
-curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+curl -X POST "https://api.example.com/v1/videos" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -456,7 +457,7 @@ curl -X POST "https://kjapi.botsmart.net/v1/videos" \
     }
   }'</code></pre></div>
         <div class="tab-panel" data-lang="r2v"><pre><code># 参考图片必须通过公网可访问 URL 提供
-curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+curl -X POST "https://api.example.com/v1/videos" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -483,7 +484,7 @@ curl -X POST "https://kjapi.botsmart.net/v1/videos" \
   }'</code></pre></div>
         <div class="tab-panel" data-lang="edit"><pre><code># 输入视频必须通过公网可访问 URL 提供
 # duration 放在顶层，用于计费用时；media.type 使用 video
-curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+curl -X POST "https://api.example.com/v1/videos" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -504,7 +505,7 @@ curl -X POST "https://kjapi.botsmart.net/v1/videos" \
       "audio_setting": "origin"
     }
   }'</code></pre></div>
-        <div class="tab-panel" data-lang="query"><pre><code>curl "https://kjapi.botsmart.net/v1/videos/&lt;task_id&gt;" \
+        <div class="tab-panel" data-lang="query"><pre><code>curl "https://api.example.com/v1/videos/&lt;task_id&gt;" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
       </div>
 
@@ -551,7 +552,7 @@ curl -X POST "https://kjapi.botsmart.net/v1/videos" \
           <button class="tab-btn active" data-lang="submit">提交任务</button>
           <button class="tab-btn" data-lang="poll">轮询状态</button>
         </div>
-        <div class="tab-panel active" data-lang="submit"><pre><code>curl "https://kjapi.botsmart.net/v1/video/generations" \
+        <div class="tab-panel active" data-lang="submit"><pre><code>curl "https://api.example.com/v1/video/generations" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -562,7 +563,7 @@ curl -X POST "https://kjapi.botsmart.net/v1/videos" \
     "duration": 4,
     "generate_audio": false
   }'</code></pre></div>
-        <div class="tab-panel" data-lang="poll"><pre><code>curl "https://kjapi.botsmart.net/v1/video/generations/&lt;task_id&gt;" \
+        <div class="tab-panel" data-lang="poll"><pre><code>curl "https://api.example.com/v1/video/generations/&lt;task_id&gt;" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
       </div>
 
@@ -615,7 +616,7 @@ curl -X POST "https://kjapi.botsmart.net/v1/videos" \
           <button class="tab-btn active" data-lang="curl">cURL</button>
           <button class="tab-btn" data-lang="python">Python</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/audio/speech" \
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1/audio/speech" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -627,7 +628,7 @@ curl -X POST "https://kjapi.botsmart.net/v1/videos" \
         <div class="tab-panel" data-lang="python"><pre><code>import requests
 
 resp = requests.post(
-    "https://kjapi.botsmart.net/v1/audio/speech",
+    "https://api.example.com/v1/audio/speech",
     headers={
         "Authorization": "Bearer &lt;YOUR_API_KEY&gt;",
         "Content-Type": "application/json",
@@ -715,7 +716,7 @@ with open("speech.wav", "wb") as f:
     </section>
 
     <footer class="content-footer">
-      <p>跨境BotAPI · 客户接入文档</p>
+      <p class="footer-text">客户接入文档</p>
     </footer>
 
   </main>

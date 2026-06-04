@@ -7,6 +7,39 @@
 
   var root = document.documentElement;
 
+  /* ---------- 站点配置注入（域名占位替换 + 品牌） ---------- */
+  (function applyConfig() {
+    var cfg = window.SITE_CONFIG || {};
+    var PLACEHOLDER = "https://api.example.com";
+    // base url 优先级：config.baseUrl ＞ 当前访问域名(同域反代) ＞ 占位符(本地 file:// 预览)
+    var base = (cfg.baseUrl || "").trim();
+    if (!base) {
+      base = /^https?:/i.test(location.origin) ? location.origin : PLACEHOLDER;
+    }
+    base = base.replace(/\/+$/, "");
+
+    if (cfg.title) document.title = cfg.title;
+    if (cfg.brandName) {
+      var bn = document.querySelector(".brand-name");
+      if (bn) bn.textContent = cfg.brandName;
+    }
+    if (cfg.footerText) {
+      var ft = document.querySelector(".footer-text");
+      if (ft) ft.textContent = cfg.footerText;
+    }
+
+    if (base && base !== PLACEHOLDER) {
+      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+      var targets = [], node;
+      while ((node = walker.nextNode())) {
+        if (node.nodeValue.indexOf(PLACEHOLDER) !== -1) targets.push(node);
+      }
+      targets.forEach(function (t) {
+        t.nodeValue = t.nodeValue.split(PLACEHOLDER).join(base);
+      });
+    }
+  })();
+
   /* ---------- 主题切换 ---------- */
   var themeToggle = document.getElementById("themeToggle");
   function applyTheme(theme) {

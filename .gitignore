@@ -1,6 +1,10 @@
 # 本地部署参考截图（不纳入文档仓库）
 企业微信截图_*.png
 
+# 内容来源参考文档（仅本地素材，不入部署仓库，避免品牌交叉）
+kjapi-customer-usage-2026-06-01.md
+chinarouter-seedance2-guide.md
+
 # OS / 编辑器
 .DS_Store
 Thumbs.db
