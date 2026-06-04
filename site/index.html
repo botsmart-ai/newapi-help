@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API 接入文档 · 跨境BotAPI</title>
+<meta name="description" content="统一接口接入 Claude、GPT、Gemini、DeepSeek、GLM、Kimi、Qwen 等主流大模型，含文本、图片、视频、TTS 调用示例。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="css/style.css">
+<script>
+  // 防主题闪烁：在样式应用前确定主题（localStorage 优先，否则跟随系统）
+  (function () {
+    try {
+      var saved = localStorage.getItem("botapi-theme");
+      var theme = saved || (window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch (e) {}
+  })();
+</script>
+</head>
+<body>
+
+<!-- 顶栏 -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#overview">
+      <span class="brand-mark">API</span>
+      <span class="brand-name">跨境BotAPI · 接入文档</span>
+    </a>
+    <div class="topbar-actions">
+      <button id="menuToggle" class="icon-btn only-mobile" aria-label="菜单">☰</button>
+      <button id="themeToggle" class="icon-btn" aria-label="切换主题" title="切换深色/浅色">
+        <span class="theme-icon-light">☀</span>
+        <span class="theme-icon-dark">☾</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- 侧边导航 -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="toc">
+      <div class="toc-group">入门</div>
+      <a href="#overview" class="toc-link">概述</a>
+      <a href="#basic" class="toc-link">基本信息</a>
+      <a href="#ping" class="toc-link">连通性测试</a>
+      <a href="#models" class="toc-link">模型清单</a>
+
+      <div class="toc-group">调用示例</div>
+      <a href="#claude" class="toc-link">Claude · Anthropic</a>
+      <a href="#openai-text" class="toc-link">GPT / DeepSeek / GLM 等</a>
+      <a href="#gemini" class="toc-link">Gemini · 原生协议</a>
+      <a href="#images" class="toc-link">图片生成</a>
+      <a href="#videos" class="toc-link">视频生成</a>
+      <a href="#tts" class="toc-link">语音合成 TTS</a>
+
+      <div class="toc-group">进阶</div>
+      <a href="#thinking" class="toc-link">Claude thinking</a>
+      <a href="#summary" class="toc-link">接入方式汇总</a>
+      <a href="#notes" class="toc-link">接入注意事项</a>
+    </nav>
+  </aside>
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+  <!-- 正文 -->
+  <main class="content">
+
+    <!-- 概述 -->
+    <section id="overview" class="sec">
+      <p class="eyebrow">客户接入说明</p>
+      <h1>统一接口，接入主流大模型</h1>
+      <p class="lead">
+        一个 API Key 即可调用 Claude、GPT、Gemini、DeepSeek、GLM、Kimi、Qwen 等模型，覆盖文本、图片、视频与语音合成。
+        本文档面向技术接入方，以及会自动生成接入代码的 AI 助手，对每类模型只给出一种推荐调用方式以降低歧义。
+      </p>
+      <div class="callout callout-info">
+        <strong>适用路径：</strong><code>via-kjapi</code>。文档内容基于对 <code>https://kjapi.botsmart.net</code> 的实际测试结果整理。
+      </div>
+    </section>
+
+    <!-- 基本信息 -->
+    <section id="basic" class="sec">
+      <h2>基本信息</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-label">Base URL</div>
+          <div class="info-value"><code>https://kjapi.botsmart.net</code></div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">鉴权方式</div>
+          <div class="info-value"><code>Bearer Key</code> / <code>x-api-key</code> / <code>x-goog-api-key</code></div>
+        </div>
+        <div class="info-card">
+          <div class="info-label">模型列表接口</div>
+          <div class="info-value"><code>GET /v1/models</code></div>
+        </div>
+      </div>
+      <ul class="bullet">
+        <li>同一个 API Key 可访问当前账号下全部已开放模型。</li>
+        <li>接入时请直接按本文档给出的方式调用对应模型。</li>
+        <li>如果只想先验证 Key 是否可用，建议先调用 <code>/v1/models</code>。</li>
+      </ul>
+    </section>
+
+    <!-- 连通性测试 -->
+    <section id="ping" class="sec">
+      <h2>快速连通性测试</h2>
+      <p>返回 <code>success: true</code> 且能看到 <code>data</code> 数组，说明 Key 与平台链路正常。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="curl">cURL</button>
+        </div>
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/models" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
+      </div>
+    </section>
+
+    <!-- 模型清单 -->
+    <section id="models" class="sec">
+      <h2>模型清单</h2>
+      <p>按协议归类如下。同类模型切换时通常只需替换 <code>model</code> 字段。</p>
+
+      <div class="model-grid">
+        <div class="model-card">
+          <div class="model-head"><span class="proto-tag tag-anthropic">Anthropic</span> Claude 文本</div>
+          <div class="model-tags">
+            <span>claude-haiku-4-5-20251001</span><span>claude-opus-4-6</span>
+            <span>claude-opus-4-7</span><span>claude-sonnet-4-6</span>
+          </div>
+        </div>
+
+        <div class="model-card">
+          <div class="model-head"><span class="proto-tag tag-openai">OpenAI</span> GPT / DeepSeek / GLM / Kimi / Qwen</div>
+          <div class="model-tags">
+            <span>gpt-5.2</span><span>gpt-5.3-codex</span><span>gpt-5.4</span><span>gpt-5.5</span>
+            <span>DeepSeek-V4-Flash</span><span>DeepSeek-V4-Pro</span>
+            <span>glm-4.7</span><span>glm-5</span><span>GLM-5.1</span><span>GLM-5V-Turbo</span>
+            <span>Kimi-K2.6</span><span>qwen3.6-flash</span><span>qwen3.6-max-preview</span><span>qwen3.6-plus</span>
+          </div>
+        </div>
+
+        <div class="model-card">
+          <div class="model-head"><span class="proto-tag tag-gemini">Gemini</span> 文本</div>
+          <div class="model-tags">
+            <span>gemini-3-flash-preview</span><span>gemini-3-pro-preview</span>
+            <span>gemini-3.5-flash</span><span>gemini-3.1-pro-preview</span>
+          </div>
+        </div>
+
+        <div class="model-card">
+          <div class="model-head"><span class="proto-tag tag-gemini">Gemini</span> 图像</div>
+          <div class="model-tags">
+            <span>gemini-3-pro-image-preview</span><span>gemini-3.1-flash-image-preview</span>
+          </div>
+        </div>
+
+        <div class="model-card">
+          <div class="model-head"><span class="proto-tag tag-openai">OpenAI Images</span> 图片生成</div>
+          <div class="model-tags"><span>gpt-image-2</span></div>
+        </div>
+
+        <div class="model-card">
+          <div class="model-head"><span class="proto-tag tag-video">视频任务</span> 视频生成</div>
+          <div class="model-tags">
+            <span>happyhorse-1.0-t2v</span><span>happyhorse-1.0-i2v</span>
+            <span>happyhorse-1.0-r2v</span><span>happyhorse-1.0-video-edit</span>
+          </div>
+        </div>
+
+        <div class="model-card">
+          <div class="model-head"><span class="proto-tag tag-tts">Audio Speech</span> 语音合成</div>
+          <div class="model-tags">
+            <span>qwen3-tts-flash</span><span>MiniMax/speech-2.8-turbo</span><span>MiniMax/speech-2.8-hd</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Claude -->
+    <section id="claude" class="sec">
+      <h2><span class="proto-tag tag-anthropic">Anthropic</span> Claude 文本</h2>
+      <p>接口：<code>POST /v1/messages</code>。鉴权头为 <code>x-api-key</code>，需带 <code>anthropic-version</code>。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="curl">cURL</button>
+          <button class="tab-btn" data-lang="python">Python</button>
+        </div>
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/messages" \
+  -H "x-api-key: &lt;YOUR_API_KEY&gt;" \
+  -H "anthropic-version: 2023-06-01" \
+  -H "content-type: application/json" \
+  -d '{
+    "model": "claude-sonnet-4-6",
+    "max_tokens": 1024,
+    "messages": [
+      {"role": "user", "content": "请用一句话介绍你自己"}
+    ]
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="python"><pre><code>import requests
+
+resp = requests.post(
+    "https://kjapi.botsmart.net/v1/messages",
+    headers={
+        "x-api-key": "&lt;YOUR_API_KEY&gt;",
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+    },
+    json={
+        "model": "claude-sonnet-4-6",
+        "max_tokens": 1024,
+        "messages": [
+            {"role": "user", "content": "请用一句话介绍你自己"}
+        ],
+    },
+    timeout=120,
+)
+
+resp.raise_for_status()
+print(resp.json()["content"][0]["text"])</code></pre></div>
+      </div>
+    </section>
+
+    <!-- OpenAI 文本 -->
+    <section id="openai-text" class="sec">
+      <h2><span class="proto-tag tag-openai">OpenAI</span> GPT / DeepSeek / GLM / Kimi / Qwen 文本</h2>
+      <p>接口：<code>POST /v1/chat/completions</code>。切换同类模型时只需替换 <code>model</code>。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="curl">cURL</button>
+          <button class="tab-btn" data-lang="python">Python（OpenAI SDK）</button>
+        </div>
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/chat/completions" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-5.4",
+    "messages": [
+      {"role": "user", "content": "请用一句话介绍你自己"}
+    ],
+    "max_tokens": 512
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="python"><pre><code>from openai import OpenAI
+
+client = OpenAI(
+    api_key="&lt;YOUR_API_KEY&gt;",
+    base_url="https://kjapi.botsmart.net/v1",
+)
+
+resp = client.chat.completions.create(
+    model="gpt-5.4",
+    messages=[
+        {"role": "user", "content": "请用一句话介绍你自己"}
+    ],
+    max_tokens=512,
+)
+
+print(resp.choices[0].message.content)</code></pre></div>
+      </div>
+      <div class="callout callout-warn">
+        部分推理模型会消耗较多输出 token。使用 <code>DeepSeek-V4-Pro</code> 等模型时，建议设置足够的 <code>max_tokens</code>。
+        切换到 <code>DeepSeek-V4-Flash</code>、<code>GLM-5.1</code>、<code>Kimi-K2.6</code>、<code>qwen3.6-plus</code> 等同类模型时，只需替换 <code>model</code>。
+      </div>
+    </section>
+
+    <!-- Gemini -->
+    <section id="gemini" class="sec">
+      <h2><span class="proto-tag tag-gemini">Gemini</span> 文本 · 原生协议</h2>
+      <p>接口：<code>POST /v1beta/models/{model}:generateContent</code>。鉴权头为 <code>x-goog-api-key</code>。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="curl">cURL</button>
+          <button class="tab-btn" data-lang="python">Python</button>
+        </div>
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1beta/models/gemini-3.5-flash:generateContent" \
+  -H "x-goog-api-key: &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {"text": "请用一句话介绍你自己"}
+        ]
+      }
+    ]
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="python"><pre><code>import requests
+
+resp = requests.post(
+    "https://kjapi.botsmart.net/v1beta/models/gemini-3.5-flash:generateContent",
+    headers={
+        "x-goog-api-key": "&lt;YOUR_API_KEY&gt;",
+        "Content-Type": "application/json",
+    },
+    json={
+        "contents": [
+            {
+                "parts": [
+                    {"text": "请用一句话介绍你自己"}
+                ]
+            }
+        ]
+    },
+    timeout=120,
+)
+
+resp.raise_for_status()
+print(resp.json()["candidates"][0]["content"]["parts"][0]["text"])</code></pre></div>
+      </div>
+    </section>
+
+    <!-- 图片生成 -->
+    <section id="images" class="sec">
+      <h2>图片生成</h2>
+
+      <h3><span class="proto-tag tag-openai">OpenAI Images</span> GPT 图片模型</h3>
+      <p>接口：<code>POST /v1/images/generations</code>。返回的 base64 在 <code>data[0].b64_json</code>。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="curl">cURL</button>
+          <button class="tab-btn" data-lang="python">Python</button>
+        </div>
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/images/generations" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-image-2",
+    "prompt": "画一个极简红苹果图标",
+    "size": "1024x1024"
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="python"><pre><code>import base64
+import requests
+
+resp = requests.post(
+    "https://kjapi.botsmart.net/v1/images/generations",
+    headers={
+        "Authorization": "Bearer &lt;YOUR_API_KEY&gt;",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "gpt-image-2",
+        "prompt": "画一个极简红苹果图标",
+        "size": "1024x1024",
+    },
+    timeout=180,
+)
+
+resp.raise_for_status()
+image_b64 = resp.json()["data"][0]["b64_json"]
+
+with open("output.png", "wb") as f:
+    f.write(base64.b64decode(image_b64))</code></pre></div>
+      </div>
+
+      <h3><span class="proto-tag tag-gemini">Gemini</span> 图片模型 · 原生协议</h3>
+      <p>接口：<code>POST /v1beta/models/{model}:generateContent</code>。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="curl">cURL</button>
+        </div>
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1beta/models/gemini-3.1-flash-image-preview:generateContent" \
+  -H "x-goog-api-key: &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contents": [
+      {
+        "parts": [
+          {"text": "生成一张极简蓝色圆形图标，白色背景"}
+        ]
+      }
+    ],
+    "generationConfig": {
+      "responseModalities": ["TEXT", "IMAGE"]
+    }
+  }'</code></pre></div>
+      </div>
+      <div class="callout callout-warn">
+        <strong>返回结构说明：</strong>图片 base64 返回在 <code>candidates[0].content.parts[*].text</code> 字段中，
+        <strong>不要</strong>按 Gemini 官方 <code>inlineData.data</code> 方式解析。需要保存图片时，取出对应 <code>text</code> 字段内容后自行做 base64 解码。
+      </div>
+      <p>返回示例（伪结构）：</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar"><button class="tab-btn active" data-lang="json">JSON</button></div>
+        <div class="tab-panel active" data-lang="json"><pre><code>{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "&lt;image_base64&gt;"
+          }
+        ]
+      }
+    }
+  ]
+}</code></pre></div>
+      </div>
+    </section>
+
+    <!-- 视频生成 -->
+    <section id="videos" class="sec">
+      <h2>视频生成 · <code>/v1/videos</code></h2>
+      <div class="callout callout-info">
+        视频生成是<strong>异步任务</strong>。创建任务后返回 <code>id</code> / <code>task_id</code>，需通过 <code>GET /v1/videos/{task_id}</code> 轮询结果。
+        素材图片 / 视频必须通过<strong>公网可访问 URL</strong> 提供。
+      </div>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="t2v">文生视频</button>
+          <button class="tab-btn" data-lang="i2v">图生视频</button>
+          <button class="tab-btn" data-lang="r2v">参考图生视频</button>
+          <button class="tab-btn" data-lang="edit">视频编辑</button>
+          <button class="tab-btn" data-lang="query">查询任务</button>
+        </div>
+        <div class="tab-panel active" data-lang="t2v"><pre><code>curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "happyhorse-1.0-t2v",
+    "input": {
+      "prompt": "一匹白色小马在草原上奔跑，阳光明媚，电影感镜头"
+    },
+    "parameters": {
+      "resolution": "720P",
+      "duration": 5,
+      "ratio": "16:9",
+      "watermark": false
+    }
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="i2v"><pre><code># 图片必须通过公网可访问 URL 提供
+curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "happyhorse-1.0-i2v",
+    "input": {
+      "prompt": "让图片中的人物自然挥手，背景保持稳定",
+      "media": [
+        {
+          "type": "input_image",
+          "url": "https://example.com/input.jpg"
+        }
+      ]
+    },
+    "parameters": {
+      "resolution": "720P",
+      "duration": 5,
+      "watermark": false
+    }
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="r2v"><pre><code># 参考图片必须通过公网可访问 URL 提供
+curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "happyhorse-1.0-r2v",
+    "input": {
+      "prompt": "[Image 1]中的人物向镜头挥手，保持人物特征一致",
+      "media": [
+        {
+          "type": "reference_image",
+          "url": "https://example.com/reference-1.jpg"
+        },
+        {
+          "type": "reference_image",
+          "url": "https://example.com/reference-2.jpg"
+        }
+      ]
+    },
+    "parameters": {
+      "resolution": "720P",
+      "duration": 3,
+      "ratio": "16:9",
+      "watermark": false
+    }
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="edit"><pre><code># 输入视频必须通过公网可访问 URL 提供
+# duration 放在顶层，用于计费用时；media.type 使用 video
+curl -X POST "https://kjapi.botsmart.net/v1/videos" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "happyhorse-1.0-video-edit",
+    "duration": 3,
+    "input": {
+      "prompt": "将视频调整为电影感暖色调，保持主体动作自然",
+      "media": [
+        {
+          "type": "video",
+          "url": "https://example.com/input.mp4"
+        }
+      ]
+    },
+    "parameters": {
+      "resolution": "720P",
+      "watermark": false,
+      "audio_setting": "origin"
+    }
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="query"><pre><code>curl "https://kjapi.botsmart.net/v1/videos/&lt;task_id&gt;" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
+      </div>
+
+      <p>创建任务响应示例：</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar"><button class="tab-btn active" data-lang="json">JSON</button></div>
+        <div class="tab-panel active" data-lang="json"><pre><code>{
+  "id": "task_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "task_id": "task_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "model": "happyhorse-1.0-video-edit",
+  "status": "queued",
+  "created_at": 1779381684
+}</code></pre></div>
+      </div>
+
+      <p>任务完成响应示例（结果视频地址在 <code>metadata.url</code>）：</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar"><button class="tab-btn active" data-lang="json">JSON</button></div>
+        <div class="tab-panel active" data-lang="json"><pre><code>{
+  "id": "task_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "task_id": "task_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "model": "happyhorse-1.0-video-edit",
+  "status": "completed",
+  "progress": 100,
+  "metadata": {
+    "url": "https://example.com/generated-video.mp4"
+  },
+  "error": null
+}</code></pre></div>
+      </div>
+      <ul class="bullet">
+        <li>状态包括 <code>queued</code>、<code>in_progress</code>、<code>completed</code>、<code>failed</code>、<code>cancelled</code>。</li>
+        <li>素材 URL 必须公网可访问，应为图片或视频文件直链；不支持本地路径，不建议 base64，不要使用需登录 / Cookie / 内网访问的地址。</li>
+      </ul>
+    </section>
+
+    <!-- TTS -->
+    <section id="tts" class="sec">
+      <h2>语音合成 TTS · <code>/v1/audio/speech</code></h2>
+      <p>以下模型统一使用该接口：<code>qwen3-tts-flash</code>、<code>MiniMax/speech-2.8-turbo</code>、<code>MiniMax/speech-2.8-hd</code>。返回音频二进制，需按文件流保存。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="curl">cURL</button>
+          <button class="tab-btn" data-lang="python">Python</button>
+        </div>
+        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://kjapi.botsmart.net/v1/audio/speech" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen3-tts-flash",
+    "input": "你好，这是一个测试。",
+    "voice": "Cherry"
+  }' \
+  --output speech.wav</code></pre></div>
+        <div class="tab-panel" data-lang="python"><pre><code>import requests
+
+resp = requests.post(
+    "https://kjapi.botsmart.net/v1/audio/speech",
+    headers={
+        "Authorization": "Bearer &lt;YOUR_API_KEY&gt;",
+        "Content-Type": "application/json",
+    },
+    json={
+        "model": "qwen3-tts-flash",
+        "input": "你好，这是一个测试。",
+        "voice": "Cherry",
+    },
+    timeout=180,
+)
+
+resp.raise_for_status()
+with open("speech.wav", "wb") as f:
+    f.write(resp.content)</code></pre></div>
+      </div>
+      <div class="info-grid">
+        <div class="info-card"><div class="info-label">qwen3-tts-flash</div><div class="info-value">voice：<code>Cherry</code></div></div>
+        <div class="info-card"><div class="info-label">MiniMax/speech-2.8-turbo</div><div class="info-value">voice：<code>male-qn-qingse</code></div></div>
+        <div class="info-card"><div class="info-label">MiniMax/speech-2.8-hd</div><div class="info-value">voice：<code>male-qn-qingse</code></div></div>
+      </div>
+      <ul class="bullet">
+        <li>可选参数 <code>response_format</code>：指定音频格式，例如 <code>mp3</code>。</li>
+        <li>可选参数 <code>speed</code>：调整语速。</li>
+      </ul>
+    </section>
+
+    <!-- Claude thinking -->
+    <section id="thinking" class="sec">
+      <h2>Claude thinking 使用说明</h2>
+      <p>如需 Claude thinking，可在 Anthropic 接口里传入 <code>thinking</code> 参数。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar"><button class="tab-btn active" data-lang="json">JSON</button></div>
+        <div class="tab-panel active" data-lang="json"><pre><code>{
+  "model": "claude-sonnet-4-6",
+  "max_tokens": 4096,
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 8192
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "证明根号 2 是无理数，并写出完整步骤"
+    }
+  ]
+}</code></pre></div>
+      </div>
+      <ul class="bullet">
+        <li><code>claude-sonnet-4-6</code> 可返回 thinking / signature。</li>
+        <li><code>claude-opus-4-7</code> 如需使用 thinking，建议先单独验证业务请求。</li>
+        <li>如果只是普通聊天，不需要传 <code>thinking</code>。</li>
+      </ul>
+    </section>
+
+    <!-- 汇总 -->
+    <section id="summary" class="sec">
+      <h2>模型接入方式汇总</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>模型类型</th><th>接入方式</th></tr></thead>
+          <tbody>
+            <tr><td>Claude</td><td>Anthropic <code>/v1/messages</code></td></tr>
+            <tr><td>GPT / DeepSeek / GLM / Kimi / Qwen 文本</td><td>OpenAI <code>/v1/chat/completions</code></td></tr>
+            <tr><td>Gemini 文本</td><td>Gemini 原生 <code>POST /v1beta/models/{model}:generateContent</code></td></tr>
+            <tr><td>Gemini 图像相关模型</td><td>Gemini 原生 <code>POST /v1beta/models/{model}:generateContent</code></td></tr>
+            <tr><td>图片生成</td><td><code>/v1/images/generations</code></td></tr>
+            <tr><td>视频生成</td><td><code>/v1/videos</code></td></tr>
+            <tr><td>TTS</td><td><code>/v1/audio/speech</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 注意事项 -->
+    <section id="notes" class="sec">
+      <h2>接入注意事项</h2>
+      <ol class="ordered">
+        <li><code>GET /v1/models</code> 返回的是当前 Key 可见的模型集合，接入前建议先拉取一次。</li>
+        <li>接入时请直接采用本文档对应模型的接口与请求格式。</li>
+        <li>Gemini 系列使用本文档中的原生接口与请求格式。</li>
+        <li>视频接口为异步任务接口，不能按普通文本接口理解。</li>
+        <li>TTS 返回的是音频二进制内容，客户端要按文件流保存。</li>
+      </ol>
+    </section>
+
+    <footer class="content-footer">
+      <p>跨境BotAPI · 客户接入文档</p>
+      <p class="muted">文档内容基于 2026-05-28 至 2026-06-01 的实际测试结果整理。</p>
+    </footer>
+
+  </main>
+</div>
+
+<script src="js/main.js"></script>
+</body>
+</html>

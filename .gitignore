@@ -1,0 +1,8 @@
+# 本地部署参考截图（不纳入文档仓库）
+企业微信截图_*.png
+
+# OS / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
