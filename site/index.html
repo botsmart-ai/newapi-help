@@ -54,7 +54,7 @@
       <a href="#claude" class="toc-link">Claude · Anthropic</a>
       <a href="#openai-text" class="toc-link">GPT / DeepSeek / GLM 等</a>
       <a href="#gemini" class="toc-link">Gemini · 原生协议</a>
-      <a href="#images" class="toc-link">图片生成</a>
+      <a href="#images" class="toc-link">图片生成 / 编辑</a>
       <a href="#videos" class="toc-link">视频生成</a>
       <a href="#tts" class="toc-link">语音合成 TTS</a>
 
@@ -156,7 +156,7 @@
         </div>
 
         <div class="model-card">
-          <div class="model-head"><span class="proto-tag tag-openai">OpenAI Images</span> 图片生成</div>
+          <div class="model-head"><span class="proto-tag tag-openai">OpenAI Images</span> 图片生成 / 编辑</div>
           <div class="model-tags"><span>gpt-image-2</span></div>
         </div>
 
@@ -318,37 +318,61 @@ print(resp.json()["candidates"][0]["content"]["parts"][0]["text"])</code></pre><
 
     <!-- 图片生成 -->
     <section id="images" class="sec">
-      <h2>图片生成</h2>
+      <h2>图片生成 / 编辑</h2>
 
       <h3><span class="proto-tag tag-openai">OpenAI Images</span> GPT 图片模型</h3>
-      <p>接口：<code>POST /v1/images/generations</code>。返回的 base64 在 <code>data[0].b64_json</code>。</p>
+      <p><code>gpt-image-2</code> 支持文生图与图像编辑。文生图使用 <code>POST /v1/images/generations</code>，图像编辑 / 参考图生成使用 <code>POST /v1/images/edits</code>。GPT Image 模型默认返回 base64，图片内容在 <code>data[0].b64_json</code>。</p>
       <div class="code-tabs" data-tabs>
         <div class="tab-bar">
-          <button class="tab-btn active" data-lang="curl">cURL</button>
-          <button class="tab-btn" data-lang="python">Python</button>
+          <button class="tab-btn active" data-lang="generate">文生图</button>
+          <button class="tab-btn" data-lang="edit">图像编辑 / 参考图</button>
+          <button class="tab-btn" data-lang="mask">局部重绘 mask</button>
+          <button class="tab-btn" data-lang="python">Python 保存图片</button>
         </div>
-        <div class="tab-panel active" data-lang="curl"><pre><code>curl "https://api.example.com/v1/images/generations" \
+        <div class="tab-panel active" data-lang="generate"><pre><code>curl "https://api.example.com/v1/images/generations" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-image-2",
     "prompt": "画一个极简红苹果图标",
-    "size": "1024x1024"
+    "size": "1024x1024",
+    "quality": "medium",
+    "output_format": "png"
   }'</code></pre></div>
+        <div class="tab-panel" data-lang="edit"><pre><code># 图像编辑接口必须使用 multipart/form-data，不是 JSON
+# image 可上传 1 张或多张图片；可用于修改原图，也可作为参考图生成新图
+curl "https://api.example.com/v1/images/edits" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -F "model=gpt-image-2" \
+  -F "prompt=保留人物姿势和服装，把背景改成傍晚海边，整体电影感" \
+  -F "image[]=@input.png" \
+  -F "size=1024x1024" \
+  -F "quality=medium" \
+  -F "output_format=png"</code></pre></div>
+        <div class="tab-panel" data-lang="mask"><pre><code># mask 用于提示要重绘的区域；mask 与第一张 image 尺寸一致，并带 alpha 通道
+# GPT Image 的 mask 是提示性约束，模型可能不会像传统修图工具一样逐像素严格遵守
+curl "https://api.example.com/v1/images/edits" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -F "model=gpt-image-2" \
+  -F "prompt=只替换透明遮罩区域：把桌上的空杯子改成一杯拿铁，其他区域保持不变" \
+  -F "image=@input.png" \
+  -F "mask=@mask.png" \
+  -F "size=1024x1024" \
+  -F "quality=high"</code></pre></div>
         <div class="tab-panel" data-lang="python"><pre><code>import base64
 import requests
 
 resp = requests.post(
-    "https://api.example.com/v1/images/generations",
-    headers={
-        "Authorization": "Bearer &lt;YOUR_API_KEY&gt;",
-        "Content-Type": "application/json",
-    },
-    json={
+    "https://api.example.com/v1/images/edits",
+    headers={"Authorization": "Bearer &lt;YOUR_API_KEY&gt;"},
+    data={
         "model": "gpt-image-2",
-        "prompt": "画一个极简红苹果图标",
+        "prompt": "把图片改成水彩插画风格，保持主体构图不变",
         "size": "1024x1024",
+        "quality": "medium",
+        "output_format": "png",
     },
+    files={"image": open("input.png", "rb")},
     timeout=180,
 )
 
@@ -357,6 +381,9 @@ image_b64 = resp.json()["data"][0]["b64_json"]
 
 with open("output.png", "wb") as f:
     f.write(base64.b64decode(image_b64))</code></pre></div>
+      </div>
+      <div class="callout callout-info">
+        <strong>参数说明：</strong><code>size</code> 可传 <code>1024x1024</code>、<code>1536x1024</code>、<code>1024x1536</code>、<code>auto</code> 等；<code>quality</code> 可传 <code>low</code>、<code>medium</code>、<code>high</code>、<code>auto</code>；<code>output_format</code> 可传 <code>png</code>、<code>jpeg</code>、<code>webp</code>。若使用 <code>jpeg</code> / <code>webp</code>，可额外设置 <code>output_compression</code>。<code>gpt-image-2</code> 不支持 <code>background: "transparent"</code>；编辑时也不要传 <code>response_format</code>，GPT Image 模型默认返回 base64。
       </div>
 
       <h3><span class="proto-tag tag-gemini">Gemini</span> 图片模型 · 原生协议</h3>
@@ -801,7 +828,7 @@ with open("speech.wav", "wb") as f:
             <tr><td>GPT / DeepSeek / GLM / Kimi / Qwen 文本</td><td>OpenAI <code>/v1/chat/completions</code></td></tr>
             <tr><td>Gemini 文本</td><td>Gemini 原生 <code>POST /v1beta/models/{model}:generateContent</code></td></tr>
             <tr><td>Gemini 图像相关模型</td><td>Gemini 原生 <code>POST /v1beta/models/{model}:generateContent</code></td></tr>
-            <tr><td>图片生成</td><td><code>/v1/images/generations</code></td></tr>
+            <tr><td>图片生成 / 编辑</td><td><code>/v1/images/generations</code> / <code>/v1/images/edits</code></td></tr>
             <tr><td>视频生成</td><td><code>/v1/videos</code></td></tr>
             <tr><td>TTS</td><td><code>/v1/audio/speech</code></td></tr>
           </tbody>
