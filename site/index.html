@@ -550,7 +550,7 @@ curl -X POST "https://api.example.com/v1/videos" \
       <p>Seedance 2.0 有两种常用请求写法：</p>
       <ul class="bullet">
         <li>普通文生视频可用简单扁平参数：<code>prompt</code>、<code>resolution</code>、<code>ratio</code>、<code>duration</code>。</li>
-        <li>需要参考图片、参考视频、参考音频、首尾帧时，使用 <code>content</code> 数组。数组内第一项通常是 <code>type: "text"</code> 的提示词，其余素材项按 <code>type</code> 与 <code>role</code> 标明用途。</li>
+        <li>需要参考图片、参考视频、参考音频、首尾帧时，使用 <code>content</code> 数组，并保留顶层 <code>prompt</code>。数组内第一项可放 <code>type: "text"</code> 的提示词副本，其余素材项按 <code>type</code> 与 <code>role</code> 标明用途。</li>
       </ul>
       <div class="code-tabs" data-tabs>
         <div class="tab-bar">
@@ -575,6 +575,7 @@ curl -X POST "https://api.example.com/v1/videos" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "doubao-seedance-2-0-260128",
+    "prompt": "以图片1作为首帧、图片2作为尾帧，生成一段自然流畅的产品转场视频，保持主体一致",
     "content": [
       {
         "type": "text",
@@ -607,6 +608,7 @@ curl -X POST "https://api.example.com/v1/videos" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "doubao-seedance-2-0-fast-260128",
+    "prompt": "参考图片1的人物外观、参考视频1的镜头运动、参考音频1的节奏，生成一段电影感短视频",
     "content": [
       {
         "type": "text",
@@ -671,7 +673,7 @@ curl -X POST "https://api.example.com/v1/videos" \
           <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
           <tbody>
             <tr><td><code>model</code></td><td>string</td><td>模型名，见上表</td></tr>
-            <tr><td><code>prompt</code></td><td>string</td><td>普通文生视频的提示词；使用 <code>content</code> 时可不传，改放在 <code>content[0].text</code></td></tr>
+            <tr><td><code>prompt</code></td><td>string</td><td>提示词；KJAPI 适配层要求保留顶层 <code>prompt</code>，即使同时使用 <code>content</code></td></tr>
             <tr><td><code>content</code></td><td>array</td><td>多模态输入数组。需要参考图片、视频、音频或首尾帧时使用</td></tr>
             <tr><td><code>resolution</code></td><td>string</td><td><code>480p</code> / <code>720p</code> / <code>1080p</code>；快速版通常建议用 <code>720p</code></td></tr>
             <tr><td><code>ratio</code></td><td>string</td><td><code>16:9</code> / <code>9:16</code> / <code>1:1</code> / <code>4:3</code> / <code>3:4</code> / <code>21:9</code> / <code>adaptive</code></td></tr>
@@ -699,7 +701,7 @@ curl -X POST "https://api.example.com/v1/videos" \
       </div>
       <ul class="bullet">
         <li>图片、视频、音频都必须使用公网可访问的文件直链，不支持本地路径，不要使用需要登录、Cookie 或内网访问的地址。</li>
-        <li>参考素材在提示词中可用“图片1 / 视频1 / 音频1”等方式指代，顺序对应 <code>content</code> 数组里的素材顺序。</li>
+        <li>参考素材在提示词中可用“图片1 / 视频1 / 音频1”等方式指代，顺序对应 <code>content</code> 数组里的素材顺序。KJAPI 适配层要求顶层 <code>prompt</code>，建议与 <code>content</code> 中的 text 保持一致。</li>
         <li>只使用首尾帧时，建议标准版 <code>doubao-seedance-2-0-260128</code>；普通参考素材追求速度时可用快速版。</li>
       </ul>
       <div class="callout callout-info">
