@@ -153,6 +153,7 @@ h2 {
 }
 h3 { font-size: 17px; font-weight: 700; margin: 28px 0 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 h3.sub-h3 { margin-top: 44px; padding-top: 28px; border-top: 1px solid var(--border); }
+.mini-title { font-size: 15px; margin: 24px 0 10px; color: var(--text); }
 .lead { font-size: 16px; color: var(--text-2); margin: 0 0 18px; }
 p { margin: 0 0 14px; color: var(--text-2); }
 .content p code, .content li code, h2 code, h3 code, td code {

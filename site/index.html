@@ -547,12 +547,19 @@ curl -X POST "https://api.example.com/v1/videos" \
         <span>doubao-seedance-2-0-260128 · 标准版（画质更好）</span>
         <span>doubao-seedance-2-0-fast-260128 · 快速版（生成更快）</span>
       </div>
+      <p>Seedance 2.0 有两种常用请求写法：</p>
+      <ul class="bullet">
+        <li>普通文生视频可用简单扁平参数：<code>prompt</code>、<code>resolution</code>、<code>ratio</code>、<code>duration</code>。</li>
+        <li>需要参考图片、参考视频、参考音频、首尾帧时，使用 <code>content</code> 数组。数组内第一项通常是 <code>type: "text"</code> 的提示词，其余素材项按 <code>type</code> 与 <code>role</code> 标明用途。</li>
+      </ul>
       <div class="code-tabs" data-tabs>
         <div class="tab-bar">
-          <button class="tab-btn active" data-lang="submit">提交任务</button>
+          <button class="tab-btn active" data-lang="text">文生视频</button>
+          <button class="tab-btn" data-lang="frames">首尾帧图片</button>
+          <button class="tab-btn" data-lang="refs">参考图片/视频/音频</button>
           <button class="tab-btn" data-lang="poll">轮询状态</button>
         </div>
-        <div class="tab-panel active" data-lang="submit"><pre><code>curl "https://api.example.com/v1/video/generations" \
+        <div class="tab-panel active" data-lang="text"><pre><code>curl "https://api.example.com/v1/video/generations" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
@@ -562,6 +569,76 @@ curl -X POST "https://api.example.com/v1/videos" \
     "ratio": "16:9",
     "duration": 4,
     "generate_audio": false
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="frames"><pre><code>curl "https://api.example.com/v1/video/generations" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "doubao-seedance-2-0-260128",
+    "content": [
+      {
+        "type": "text",
+        "text": "以图片1作为首帧、图片2作为尾帧，生成一段自然流畅的产品转场视频，保持主体一致"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "https://example.com/first-frame.jpg"
+        },
+        "role": "first_frame"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "https://example.com/last-frame.jpg"
+        },
+        "role": "last_frame"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "adaptive",
+    "duration": 4,
+    "generate_audio": false,
+    "watermark": false,
+    "return_last_frame": true
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="refs"><pre><code>curl "https://api.example.com/v1/video/generations" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "doubao-seedance-2-0-fast-260128",
+    "content": [
+      {
+        "type": "text",
+        "text": "参考图片1的人物外观、参考视频1的镜头运动、参考音频1的节奏，生成一段电影感短视频"
+      },
+      {
+        "type": "image_url",
+        "image_url": {
+          "url": "https://example.com/reference-image.jpg"
+        },
+        "role": "reference_image"
+      },
+      {
+        "type": "video_url",
+        "video_url": {
+          "url": "https://example.com/reference-video.mp4"
+        },
+        "role": "reference_video"
+      },
+      {
+        "type": "audio_url",
+        "audio_url": {
+          "url": "https://example.com/reference-audio.mp3"
+        },
+        "role": "reference_audio"
+      }
+    ],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 4,
+    "generate_audio": true,
+    "watermark": false
   }'</code></pre></div>
         <div class="tab-panel" data-lang="poll"><pre><code>curl "https://api.example.com/v1/video/generations/&lt;task_id&gt;" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
@@ -594,14 +671,37 @@ curl -X POST "https://api.example.com/v1/videos" \
           <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
           <tbody>
             <tr><td><code>model</code></td><td>string</td><td>模型名，见上表</td></tr>
-            <tr><td><code>prompt</code></td><td>string</td><td>视频描述，中英文均可</td></tr>
-            <tr><td><code>resolution</code></td><td>string</td><td><code>480p</code> / <code>720p</code> / <code>1080p</code></td></tr>
-            <tr><td><code>ratio</code></td><td>string</td><td><code>16:9</code> / <code>9:16</code> / <code>1:1</code></td></tr>
-            <tr><td><code>duration</code></td><td>int</td><td>时长（秒），建议 4–8</td></tr>
-            <tr><td><code>generate_audio</code></td><td>bool</td><td>是否生成背景音（默认 false）</td></tr>
+            <tr><td><code>prompt</code></td><td>string</td><td>普通文生视频的提示词；使用 <code>content</code> 时可不传，改放在 <code>content[0].text</code></td></tr>
+            <tr><td><code>content</code></td><td>array</td><td>多模态输入数组。需要参考图片、视频、音频或首尾帧时使用</td></tr>
+            <tr><td><code>resolution</code></td><td>string</td><td><code>480p</code> / <code>720p</code> / <code>1080p</code>；快速版通常建议用 <code>720p</code></td></tr>
+            <tr><td><code>ratio</code></td><td>string</td><td><code>16:9</code> / <code>9:16</code> / <code>1:1</code> / <code>4:3</code> / <code>3:4</code> / <code>21:9</code> / <code>adaptive</code></td></tr>
+            <tr><td><code>duration</code></td><td>int</td><td>时长（秒），常用 4–8；部分上游支持到 15 秒</td></tr>
+            <tr><td><code>generate_audio</code></td><td>bool</td><td>是否生成或使用音频；使用参考音频时通常设为 <code>true</code></td></tr>
+            <tr><td><code>watermark</code></td><td>bool</td><td>是否添加水印</td></tr>
+            <tr><td><code>return_last_frame</code></td><td>bool</td><td>是否在结果中返回最后一帧图片 URL</td></tr>
           </tbody>
         </table>
       </div>
+
+      <h4 class="mini-title">Seedance <code>content</code> 素材项写法</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>用途</th><th><code>type</code></th><th>URL 字段</th><th><code>role</code></th></tr></thead>
+          <tbody>
+            <tr><td>提示词</td><td><code>text</code></td><td><code>text</code></td><td>不需要</td></tr>
+            <tr><td>首帧图片</td><td><code>image_url</code></td><td><code>image_url.url</code></td><td><code>first_frame</code></td></tr>
+            <tr><td>尾帧图片</td><td><code>image_url</code></td><td><code>image_url.url</code></td><td><code>last_frame</code></td></tr>
+            <tr><td>参考图片</td><td><code>image_url</code></td><td><code>image_url.url</code></td><td><code>reference_image</code></td></tr>
+            <tr><td>参考视频</td><td><code>video_url</code></td><td><code>video_url.url</code></td><td><code>reference_video</code></td></tr>
+            <tr><td>参考音频</td><td><code>audio_url</code></td><td><code>audio_url.url</code></td><td><code>reference_audio</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <ul class="bullet">
+        <li>图片、视频、音频都必须使用公网可访问的文件直链，不支持本地路径，不要使用需要登录、Cookie 或内网访问的地址。</li>
+        <li>参考素材在提示词中可用“图片1 / 视频1 / 音频1”等方式指代，顺序对应 <code>content</code> 数组里的素材顺序。</li>
+        <li>只使用首尾帧时，建议标准版 <code>doubao-seedance-2-0-260128</code>；普通参考素材追求速度时可用快速版。</li>
+      </ul>
       <div class="callout callout-info">
         建议每隔 <strong>30 秒</strong>轮询一次，最多等待约 10 分钟超时。4 秒视频标准版约 2–3 分钟、快速版约 1–2 分钟。
       </div>
