@@ -171,7 +171,7 @@
         <div class="model-card">
           <div class="model-head"><span class="proto-tag tag-video">视频任务</span> Seedance 视频</div>
           <div class="model-tags">
-            <span>doubao-seedance-2-0-260128</span><span>doubao-seedance-2-0-fast-260128</span>
+            <span>doubao-seedance-2.0</span><span>doubao-seedance-2.0-fast</span>
           </div>
         </div>
 
@@ -571,8 +571,8 @@ curl -X POST "https://api.example.com/v1/videos" \
       <h3 class="sub-h3">Seedance 2.0 · <code>/v1/video/generations</code></h3>
       <p>字节豆包 Seedance 视频模型，使用<strong>独立端点</strong> <code>/v1/video/generations</code>（与 Happyhorse 的 <code>/v1/videos</code> 不同），返回结构也不同。同样是异步任务：提交 → 轮询。</p>
       <div class="model-tags" style="margin: 0 0 14px;">
-        <span>doubao-seedance-2-0-260128 · 标准版（画质更好）</span>
-        <span>doubao-seedance-2-0-fast-260128 · 快速版（生成更快）</span>
+        <span>doubao-seedance-2.0 · 标准版（画质更好）</span>
+        <span>doubao-seedance-2.0-fast · 快速版（生成更快）</span>
       </div>
       <p>Seedance 2.0 有两种常用请求写法：</p>
       <ul class="bullet">
@@ -593,7 +593,7 @@ curl -X POST "https://api.example.com/v1/videos" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "doubao-seedance-2-0-260128",
+    "model": "doubao-seedance-2.0",
     "prompt": "一个中国男孩在挥舞一把宝剑 --dur 4 --rs 720p --rt 16:9 --wm false",
     "resolution": "720p",
     "ratio": "16:9",
@@ -604,7 +604,7 @@ curl -X POST "https://api.example.com/v1/videos" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "doubao-seedance-2-0-260128",
+    "model": "doubao-seedance-2.0",
     "prompt": "以图片1作为首帧、图片2作为尾帧，生成一段自然流畅的产品转场视频，保持主体一致",
     "content": [
       {
@@ -637,7 +637,7 @@ curl -X POST "https://api.example.com/v1/videos" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "doubao-seedance-2-0-fast-260128",
+    "model": "doubao-seedance-2.0-fast",
     "prompt": "参考图片1的人物外观、参考视频1的镜头运动、参考音频1的节奏，生成一段电影感短视频",
     "content": [
       {
@@ -732,8 +732,78 @@ curl -X POST "https://api.example.com/v1/videos" \
       <ul class="bullet">
         <li>图片、视频、音频都必须使用公网可访问的文件直链，不支持本地路径，不要使用需要登录、Cookie 或内网访问的地址。</li>
         <li>参考素材在提示词中可用“图片1 / 视频1 / 音频1”等方式指代，顺序对应 <code>content</code> 数组里的素材顺序。KJAPI 适配层要求顶层 <code>prompt</code>，建议与 <code>content</code> 中的 text 保持一致。</li>
-        <li>只使用首尾帧时，建议标准版 <code>doubao-seedance-2-0-260128</code>；普通参考素材追求速度时可用快速版。</li>
+        <li>只使用首尾帧时，建议标准版 <code>doubao-seedance-2.0</code>；普通参考素材追求速度时可用快速版。</li>
         <li>如需指定时长，建议在顶层 <code>duration</code> 外，再在提示词末尾追加 <code>--dur N</code>，例如 <code>--dur 15</code>。</li>
+      </ul>
+
+      <h4 class="mini-title">真人 / 仿真人参考图素材审核</h4>
+      <div class="callout callout-warn">
+        如果参考图片中包含真人或仿真人形象，需先调用素材审核 / 虚拟人像创建接口，拿到 <code>Asset://...</code> 资源地址后，再传给 Seedance 视频生成接口。请确保上传图片拥有合法使用权，不要上传侵害他人权益的素材。
+      </div>
+      <p>同步接口通常会在数秒内返回审核结果，成功后可立即使用 <code>asset_urls[0]</code>。该接口使用客户自己的 API Key 鉴权，平台会代为转发到上游，客户无需也不应传上游素材审核认证。</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-lang="asset-sync">同步审核</button>
+          <button class="tab-btn" data-lang="asset-async">异步提交</button>
+          <button class="tab-btn" data-lang="asset-query">查询异步任务</button>
+          <button class="tab-btn" data-lang="asset-video">用于视频生成</button>
+        </div>
+        <div class="tab-panel active" data-lang="asset-sync"><pre><code>curl "https://api.example.com/v1/seedance/assets/sync" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "images": ["https://example.com/person-reference.jpg"],
+    "asset_type": "Image"
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="asset-async"><pre><code>curl "https://api.example.com/v1/seedance/assets/async" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "images": ["https://example.com/person-reference.jpg"],
+    "asset_type": "Image"
+  }'</code></pre></div>
+        <div class="tab-panel" data-lang="asset-query"><pre><code>curl "https://api.example.com/v1/seedance/assets/tasks/&lt;task_id&gt;" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
+        <div class="tab-panel" data-lang="asset-video"><pre><code>curl "https://api.example.com/v1/video/generations" \
+  -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "doubao-seedance-2.0",
+    "prompt": "使用参考图中的主体，在香港雨夜街头生成一段电影感视频",
+    "images": ["Asset://asset-xxxxxxxxxxxxxxxx"],
+    "resolution": "720p",
+    "ratio": "16:9",
+    "duration": 4,
+    "generate_audio": false
+  }'</code></pre></div>
+      </div>
+      <p>同步审核成功响应示例：</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar"><button class="tab-btn active" data-lang="json">JSON</button></div>
+        <div class="tab-panel active" data-lang="json"><pre><code>{
+  "track_id": "track_xxxxxxxxxxxxxxxx",
+  "mode": "sync",
+  "code": 200,
+  "status": "completed",
+  "task_id": "task_xxxxxxxxxxxxxxxx",
+  "asset_urls": ["Asset://asset-xxxxxxxxxxxxxxxx"]
+}</code></pre></div>
+      </div>
+      <p>异步创建任务会先返回 <code>task_id</code>，再通过查询接口取 <code>asset_urls</code>：</p>
+      <div class="code-tabs" data-tabs>
+        <div class="tab-bar"><button class="tab-btn active" data-lang="json">JSON</button></div>
+        <div class="tab-panel active" data-lang="json"><pre><code>{
+  "track_id": "track_xxxxxxxxxxxxxxxx",
+  "mode": "async",
+  "code": 202,
+  "task_id": "task_xxxxxxxxxxxxxxxx"
+}</code></pre></div>
+      </div>
+      <ul class="bullet">
+        <li><code>images</code> 支持公网图片 URL、base64 字符串或 data URI；建议单次最多 10 张。</li>
+        <li>KJAPI 不会把图片另存到本地容器，只校验客户 API Key 后转发请求并返回上游结果。</li>
+        <li>素材审核接口当前不单独计费；后续视频生成仍按对应 Seedance 模型正常计费。</li>
+        <li>普通非真人参考图可继续直接传公网 URL；涉及真人 / 仿真人时使用 <code>Asset://...</code> 更稳妥。</li>
       </ul>
       <div class="callout callout-info">
         建议每隔 <strong>30 秒</strong>轮询一次，最多等待约 10 分钟超时。4 秒视频标准版约 2–3 分钟、快速版约 1–2 分钟。
@@ -829,7 +899,8 @@ with open("speech.wav", "wb") as f:
             <tr><td>Gemini 文本</td><td>Gemini 原生 <code>POST /v1beta/models/{model}:generateContent</code></td></tr>
             <tr><td>Gemini 图像相关模型</td><td>Gemini 原生 <code>POST /v1beta/models/{model}:generateContent</code></td></tr>
             <tr><td>图片生成 / 编辑</td><td><code>/v1/images/generations</code> / <code>/v1/images/edits</code></td></tr>
-            <tr><td>视频生成</td><td><code>/v1/videos</code></td></tr>
+            <tr><td>视频生成</td><td><code>/v1/videos</code> / <code>/v1/video/generations</code></td></tr>
+            <tr><td>Seedance 真人 / 仿真人素材审核</td><td><code>/v1/seedance/assets/sync</code> / <code>/v1/seedance/assets/async</code> / <code>/v1/seedance/assets/tasks/{task_id}</code></td></tr>
             <tr><td>TTS</td><td><code>/v1/audio/speech</code></td></tr>
           </tbody>
         </table>
@@ -844,6 +915,7 @@ with open("speech.wav", "wb") as f:
         <li>接入时请直接采用本文档对应模型的接口与请求格式。</li>
         <li>Gemini 系列使用本文档中的原生接口与请求格式。</li>
         <li>视频接口为异步任务接口，不能按普通文本接口理解。</li>
+        <li>Seedance 参考图若涉及真人 / 仿真人，请先完成素材审核并使用返回的 <code>Asset://...</code> 地址。</li>
         <li>TTS 返回的是音频二进制内容，客户端要按文件流保存。</li>
       </ol>
     </section>
