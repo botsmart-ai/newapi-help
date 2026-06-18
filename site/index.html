@@ -574,13 +574,14 @@ curl -X POST "https://api.example.com/v1/videos" \
         <span>doubao-seedance-2.0 · 标准版（画质更好）</span>
         <span>doubao-seedance-2.0-fast · 快速版（生成更快）</span>
       </div>
-      <p>Seedance 2.0 有两种常用请求写法：</p>
+      <p>Seedance 2.0 当前使用 zlhub 第二批接入链路。请按 KJAPI 兼容格式调用，不要把上游原生 <code>content</code> 数组直接放在请求顶层。</p>
       <ul class="bullet">
-        <li>普通文生视频可用简单扁平参数：<code>prompt</code>、<code>resolution</code>、<code>ratio</code>、<code>duration</code>。</li>
-        <li>需要参考图片、参考视频、参考音频、首尾帧时，使用 <code>content</code> 数组，并保留顶层 <code>prompt</code>。数组内第一项可放 <code>type: "text"</code> 的提示词副本，其余素材项按 <code>type</code> 与 <code>role</code> 标明用途。</li>
+        <li>普通文生视频：保留顶层 <code>model</code> 与 <code>prompt</code>，把 <code>resolution</code>、<code>ratio</code>、<code>duration</code>、<code>generate_audio</code> 等生成参数放入 <code>metadata</code>。</li>
+        <li>简单参考图片：使用顶层 <code>images</code> 数组，数组项可以是公网图片 URL 或审核后的 <code>Asset://...</code> 地址。</li>
+        <li>需要首尾帧、参考视频、参考音频或显式 <code>role</code> 时，把上游素材数组放入 <code>metadata.content</code>，同时保留顶层 <code>prompt</code>。</li>
       </ul>
       <div class="callout callout-warn">
-        <strong>时长参数实测说明：</strong>当前链路中，仅设置顶层 <code>duration</code> 可能会回落为约 5 秒。若需要严格控制时长，建议同时在 <code>prompt</code> 末尾追加官方 legacy 参数，例如 <code>--dur 15 --rs 720p --rt 16:9 --wm false</code>。实测 <code>--dur 15</code> 可生成约 15 秒视频。
+        <strong>时长参数实测说明：</strong>如需严格控制时长，建议同时在 <code>metadata.duration</code> 中设置秒数，并在 <code>prompt</code> 末尾追加官方 legacy 参数，例如 <code>--dur 15 --rs 720p --rt 16:9 --wm false</code>。实测 <code>--dur 15</code> 可生成约 15 秒视频。
       </div>
       <div class="code-tabs" data-tabs>
         <div class="tab-bar">
@@ -595,82 +596,80 @@ curl -X POST "https://api.example.com/v1/videos" \
   -d '{
     "model": "doubao-seedance-2.0",
     "prompt": "一个中国男孩在挥舞一把宝剑 --dur 4 --rs 720p --rt 16:9 --wm false",
-    "resolution": "720p",
-    "ratio": "16:9",
-    "duration": 4,
-    "generate_audio": false
+    "metadata": {
+      "resolution": "720p",
+      "ratio": "16:9",
+      "duration": 4,
+      "generate_audio": false
+    }
   }'</code></pre></div>
         <div class="tab-panel" data-lang="frames"><pre><code>curl "https://api.example.com/v1/video/generations" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "doubao-seedance-2.0",
-    "prompt": "以图片1作为首帧、图片2作为尾帧，生成一段自然流畅的产品转场视频，保持主体一致",
-    "content": [
-      {
-        "type": "text",
-        "text": "以图片1作为首帧、图片2作为尾帧，生成一段自然流畅的产品转场视频，保持主体一致"
-      },
-      {
-        "type": "image_url",
-        "image_url": {
-          "url": "https://example.com/first-frame.jpg"
+    "prompt": "以图片1作为首帧、图片2作为尾帧，生成一段自然流畅的产品转场视频，保持主体一致 --dur 4 --rs 720p --rt adaptive --wm false",
+    "metadata": {
+      "content": [
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://example.com/first-frame.jpg"
+          },
+          "role": "first_frame"
         },
-        "role": "first_frame"
-      },
-      {
-        "type": "image_url",
-        "image_url": {
-          "url": "https://example.com/last-frame.jpg"
-        },
-        "role": "last_frame"
-      }
-    ],
-    "resolution": "720p",
-    "ratio": "adaptive",
-    "duration": 4,
-    "generate_audio": false,
-    "watermark": false,
-    "return_last_frame": true
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://example.com/last-frame.jpg"
+          },
+          "role": "last_frame"
+        }
+      ],
+      "resolution": "720p",
+      "ratio": "adaptive",
+      "duration": 4,
+      "generate_audio": false,
+      "watermark": false,
+      "return_last_frame": true
+    }
   }'</code></pre></div>
         <div class="tab-panel" data-lang="refs"><pre><code>curl "https://api.example.com/v1/video/generations" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "doubao-seedance-2.0-fast",
-    "prompt": "参考图片1的人物外观、参考视频1的镜头运动、参考音频1的节奏，生成一段电影感短视频",
-    "content": [
-      {
-        "type": "text",
-        "text": "参考图片1的人物外观、参考视频1的镜头运动、参考音频1的节奏，生成一段电影感短视频"
-      },
-      {
-        "type": "image_url",
-        "image_url": {
-          "url": "https://example.com/reference-image.jpg"
+    "prompt": "参考图片1的人物外观、参考视频1的镜头运动、参考音频1的节奏，生成一段电影感短视频 --dur 4 --rs 720p --rt 16:9 --wm false",
+    "metadata": {
+      "content": [
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "https://example.com/reference-image.jpg"
+          },
+          "role": "reference_image"
         },
-        "role": "reference_image"
-      },
-      {
-        "type": "video_url",
-        "video_url": {
-          "url": "https://example.com/reference-video.mp4"
+        {
+          "type": "video_url",
+          "video_url": {
+            "url": "https://example.com/reference-video.mp4"
+          },
+          "role": "reference_video"
         },
-        "role": "reference_video"
-      },
-      {
-        "type": "audio_url",
-        "audio_url": {
-          "url": "https://example.com/reference-audio.mp3"
-        },
-        "role": "reference_audio"
-      }
-    ],
-    "resolution": "720p",
-    "ratio": "16:9",
-    "duration": 4,
-    "generate_audio": true,
-    "watermark": false
+        {
+          "type": "audio_url",
+          "audio_url": {
+            "url": "https://example.com/reference-audio.mp3"
+          },
+          "role": "reference_audio"
+        }
+      ],
+      "resolution": "720p",
+      "ratio": "16:9",
+      "duration": 4,
+      "generate_audio": true,
+      "watermark": false
+    }
   }'</code></pre></div>
         <div class="tab-panel" data-lang="poll"><pre><code>curl "https://api.example.com/v1/video/generations/&lt;task_id&gt;" \
   -H "Authorization: Bearer &lt;YOUR_API_KEY&gt;"</code></pre></div>
@@ -703,19 +702,21 @@ curl -X POST "https://api.example.com/v1/videos" \
           <thead><tr><th>参数</th><th>类型</th><th>说明</th></tr></thead>
           <tbody>
             <tr><td><code>model</code></td><td>string</td><td>模型名，见上表</td></tr>
-            <tr><td><code>prompt</code></td><td>string</td><td>提示词；KJAPI 适配层要求保留顶层 <code>prompt</code>，即使同时使用 <code>content</code></td></tr>
-            <tr><td><code>content</code></td><td>array</td><td>多模态输入数组。需要参考图片、视频、音频或首尾帧时使用</td></tr>
-            <tr><td><code>resolution</code></td><td>string</td><td><code>480p</code> / <code>720p</code> / <code>1080p</code>；快速版通常建议用 <code>720p</code></td></tr>
-            <tr><td><code>ratio</code></td><td>string</td><td><code>16:9</code> / <code>9:16</code> / <code>1:1</code> / <code>4:3</code> / <code>3:4</code> / <code>21:9</code> / <code>adaptive</code></td></tr>
-            <tr><td><code>duration</code></td><td>int</td><td>时长（秒）。当前链路如需严格生效，建议同时在 <code>prompt</code> 末尾追加 <code>--dur N</code></td></tr>
-            <tr><td><code>generate_audio</code></td><td>bool</td><td>是否生成或使用音频；使用参考音频时通常设为 <code>true</code></td></tr>
-            <tr><td><code>watermark</code></td><td>bool</td><td>是否添加水印</td></tr>
-            <tr><td><code>return_last_frame</code></td><td>bool</td><td>是否在结果中返回最后一帧图片 URL</td></tr>
+            <tr><td><code>prompt</code></td><td>string</td><td>提示词；必须保留在顶层。严格控制时长时建议在末尾追加 <code>--dur N</code></td></tr>
+            <tr><td><code>images</code></td><td>array</td><td>简单参考图片数组；支持公网 URL 或审核后返回的 <code>Asset://...</code></td></tr>
+            <tr><td><code>metadata</code></td><td>object</td><td>生成参数和高级素材参数容器；推荐把 <code>resolution</code>、<code>ratio</code>、<code>duration</code>、<code>generate_audio</code> 放在这里</td></tr>
+            <tr><td><code>metadata.content</code></td><td>array</td><td>多模态输入数组。需要参考视频、音频、首尾帧或指定 <code>role</code> 时使用</td></tr>
+            <tr><td><code>metadata.resolution</code></td><td>string</td><td><code>480p</code> / <code>720p</code> / <code>1080p</code>；快速版通常建议用 <code>720p</code></td></tr>
+            <tr><td><code>metadata.ratio</code></td><td>string</td><td><code>16:9</code> / <code>9:16</code> / <code>1:1</code> / <code>4:3</code> / <code>3:4</code> / <code>21:9</code> / <code>adaptive</code></td></tr>
+            <tr><td><code>metadata.duration</code></td><td>int</td><td>时长（秒）。当前链路如需严格生效，建议同时在 <code>prompt</code> 末尾追加 <code>--dur N</code></td></tr>
+            <tr><td><code>metadata.generate_audio</code></td><td>bool</td><td>是否生成或使用音频；使用参考音频时通常设为 <code>true</code></td></tr>
+            <tr><td><code>metadata.watermark</code></td><td>bool</td><td>是否添加水印</td></tr>
+            <tr><td><code>metadata.return_last_frame</code></td><td>bool</td><td>是否在结果中返回最后一帧图片 URL</td></tr>
           </tbody>
         </table>
       </div>
 
-      <h4 class="mini-title">Seedance <code>content</code> 素材项写法</h4>
+      <h4 class="mini-title">Seedance <code>metadata.content</code> 素材项写法</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>用途</th><th><code>type</code></th><th>URL 字段</th><th><code>role</code></th></tr></thead>
@@ -731,9 +732,10 @@ curl -X POST "https://api.example.com/v1/videos" \
       </div>
       <ul class="bullet">
         <li>图片、视频、音频都必须使用公网可访问的文件直链，不支持本地路径，不要使用需要登录、Cookie 或内网访问的地址。</li>
-        <li>参考素材在提示词中可用“图片1 / 视频1 / 音频1”等方式指代，顺序对应 <code>content</code> 数组里的素材顺序。KJAPI 适配层要求顶层 <code>prompt</code>，建议与 <code>content</code> 中的 text 保持一致。</li>
+        <li>简单图片参考优先使用顶层 <code>images</code>。需要明确首尾帧、参考视频、参考音频或素材 <code>role</code> 时，再使用 <code>metadata.content</code>。</li>
+        <li>参考素材在提示词中可用“图片1 / 视频1 / 音频1”等方式指代，顺序对应 <code>metadata.content</code> 数组里的素材顺序。</li>
         <li>只使用首尾帧时，建议标准版 <code>doubao-seedance-2.0</code>；普通参考素材追求速度时可用快速版。</li>
-        <li>如需指定时长，建议在顶层 <code>duration</code> 外，再在提示词末尾追加 <code>--dur N</code>，例如 <code>--dur 15</code>。</li>
+        <li>如需指定时长，建议设置 <code>metadata.duration</code>，并在提示词末尾追加 <code>--dur N</code>，例如 <code>--dur 15</code>。</li>
       </ul>
 
       <h4 class="mini-title">真人 / 仿真人参考图素材审核</h4>
@@ -769,12 +771,14 @@ curl -X POST "https://api.example.com/v1/videos" \
   -H "Content-Type: application/json" \
   -d '{
     "model": "doubao-seedance-2.0",
-    "prompt": "使用参考图中的主体，在香港雨夜街头生成一段电影感视频",
+    "prompt": "使用参考图中的主体，在香港雨夜街头生成一段电影感视频 --dur 4 --rs 720p --rt 16:9 --wm false",
     "images": ["Asset://asset-xxxxxxxxxxxxxxxx"],
-    "resolution": "720p",
-    "ratio": "16:9",
-    "duration": 4,
-    "generate_audio": false
+    "metadata": {
+      "resolution": "720p",
+      "ratio": "16:9",
+      "duration": 4,
+      "generate_audio": false
+    }
   }'</code></pre></div>
       </div>
       <p>同步审核成功响应示例：</p>
