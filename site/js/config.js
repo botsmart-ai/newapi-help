@@ -13,6 +13,11 @@ window.SITE_CONFIG = {
     "https://apihelp.botsmart.net":   "https://kjapi.botsmart.net",
     "https://apihelp.chinarouter.net": "https://api.chinarouter.net"
   },
+  platformMap: {
+    "https://apihelp.botsmart.net":   "kjapi",
+    "https://apihelp.chinarouter.net": "overseas"
+  },
+  defaultPlatform: "kjapi",
   brandName:  "",
   title:      "API 接入文档",
   footerText: "客户接入文档"

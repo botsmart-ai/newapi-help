@@ -18,8 +18,10 @@
     //    例：https://apihelp.chinarouter.net → https://api.chinarouter.net
     // 3. 本地 file:// 预览 → 占位符（页面可渲染，不暴露真实域名）
     var map = cfg.originMap || {};
+    var platformMap = cfg.platformMap || {};
     var origin = /^https?:/i.test(location.origin) ? location.origin : "";
     var base;
+    var platform = resolvePlatform(cfg, platformMap, origin);
 
     if (origin && map[origin]) {
       // 命中映射表
@@ -53,7 +55,25 @@
         t.nodeValue = t.nodeValue.split(PLACEHOLDER).join(base);
       });
     }
+
+    if (platform) {
+      root.setAttribute("data-platform", platform);
+      document.querySelectorAll("[data-platform-hide]").forEach(function (el) {
+        var platforms = el.getAttribute("data-platform-hide").split(/\s+/);
+        if (platforms.indexOf(platform) !== -1) el.hidden = true;
+      });
+    }
   })();
+
+  function resolvePlatform(cfg, platformMap, origin) {
+    if (origin && platformMap[origin]) return platformMap[origin];
+
+    var host = location.hostname || "";
+    if (host.indexOf("chinarouter") !== -1) return "overseas";
+    if (host.indexOf("botsmart") !== -1) return "kjapi";
+
+    return cfg.defaultPlatform || "";
+  }
 
   /* ---------- 主题切换 ---------- */
   var themeToggle = document.getElementById("themeToggle");
