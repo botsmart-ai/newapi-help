@@ -1,85 +1,209 @@
 /* ============================================================
-   跨境BotAPI 接入文档 — 交互
-   主题切换 / 代码 Tab / 一键复制 / 移动端菜单 / 滚动高亮
+   Static guide interactions
    ============================================================ */
 (function () {
   "use strict";
 
   var root = document.documentElement;
+  var cfg = window.SITE_CONFIG || {};
+  var dictionaries = window.SITE_I18N || {};
+  var PLACEHOLDER = "https://api.example.com";
+  var LANG_STORAGE_KEY = "botapi-help-lang";
+  var origin = /^https?:/i.test(location.origin) ? location.origin : "";
+  var platform = resolvePlatform(cfg, cfg.platformMap || {}, origin);
+  var baseUrl = resolveBaseUrl(cfg.originMap || {}, origin);
+  var currentLanguage = resolveLanguage(cfg, platform, origin);
 
-  /* ---------- 站点配置注入（域名占位替换 + 品牌） ---------- */
-  (function applyConfig() {
-    var cfg = window.SITE_CONFIG || {};
-    var PLACEHOLDER = "https://api.example.com";
+  applyPlatform(platform);
+  applyLanguage(currentLanguage);
 
-    // base url 解析：
-    // 1. originMap 命中当前 origin → 用映射值
-    // 2. 未命中且是 http(s) → 把二级子域替换为 api
-    //    例：https://apihelp.chinarouter.net → https://api.chinarouter.net
-    // 3. 本地 file:// 预览 → 占位符（页面可渲染，不暴露真实域名）
-    var map = cfg.originMap || {};
-    var platformMap = cfg.platformMap || {};
-    var origin = /^https?:/i.test(location.origin) ? location.origin : "";
+  function resolveBaseUrl(map, currentOrigin) {
     var base;
-    var platform = resolvePlatform(cfg, platformMap, origin);
-
-    if (origin && map[origin]) {
-      // 命中映射表
-      base = map[origin];
-    } else if (origin) {
-      // 未命中：把子域部分替换为 api
-      // https://foo.bar.com → https://api.bar.com
-      base = origin.replace(/^(https?:\/\/)[^.]+\./, "$1api.");
+    if (currentOrigin && map[currentOrigin]) {
+      base = map[currentOrigin];
+    } else if (currentOrigin) {
+      base = currentOrigin.replace(/^(https?:\/\/)[^.]+\./, "$1api.");
     } else {
       base = PLACEHOLDER;
     }
-    base = base.replace(/\/+$/, "");
+    return base.replace(/\/+$/, "");
+  }
 
-    if (cfg.title) document.title = cfg.title;
-    if (cfg.brandName) {
-      var bn = document.querySelector(".brand-name");
-      if (bn) bn.textContent = cfg.brandName;
-    }
-    if (cfg.footerText) {
-      var ft = document.querySelector(".footer-text");
-      if (ft) ft.textContent = cfg.footerText;
-    }
-
-    if (base && base !== PLACEHOLDER) {
-      var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
-      var targets = [], node;
-      while ((node = walker.nextNode())) {
-        if (node.nodeValue.indexOf(PLACEHOLDER) !== -1) targets.push(node);
-      }
-      targets.forEach(function (t) {
-        t.nodeValue = t.nodeValue.split(PLACEHOLDER).join(base);
-      });
-    }
-
-    if (platform) {
-      root.setAttribute("data-platform", platform);
-      document.querySelectorAll("[data-platform-hide]").forEach(function (el) {
-        var platforms = el.getAttribute("data-platform-hide").split(/\s+/);
-        if (platforms.indexOf(platform) !== -1) el.hidden = true;
-      });
-    }
-  })();
-
-  function resolvePlatform(cfg, platformMap, origin) {
-    if (origin && platformMap[origin]) return platformMap[origin];
+  function resolvePlatform(siteConfig, platformMap, currentOrigin) {
+    if (currentOrigin && platformMap[currentOrigin]) return platformMap[currentOrigin];
 
     var host = location.hostname || "";
     if (host.indexOf("chinarouter") !== -1) return "overseas";
     if (host.indexOf("botsmart") !== -1) return "kjapi";
 
-    return cfg.defaultPlatform || "";
+    return siteConfig.defaultPlatform || "";
   }
 
-  /* ---------- 主题切换 ---------- */
+  function resolveLanguage(siteConfig, currentPlatform, currentOrigin) {
+    var saved = readStoredLanguage();
+    if (saved && dictionaries[saved]) return saved;
+
+    var languageMap = siteConfig.languageMap || {};
+    if (currentOrigin && dictionaries[languageMap[currentOrigin]]) {
+      return languageMap[currentOrigin];
+    }
+
+    var host = location.hostname || "";
+    var defaultLanguageMap = siteConfig.defaultLanguageMap || {};
+    var platformMap = siteConfig.platformMap || {};
+    if (host.indexOf("botsmart") !== -1) return defaultLanguageMap.kjapi || "zh-CN";
+    if (host.indexOf("chinarouter") !== -1) return defaultLanguageMap.overseas || "en";
+    if (currentOrigin && currentPlatform && platformMap[currentOrigin] === currentPlatform && dictionaries[defaultLanguageMap[currentPlatform]]) {
+      return defaultLanguageMap[currentPlatform];
+    }
+
+    return dictionaries.en ? "en" : "zh-CN";
+  }
+
+  function readStoredLanguage() {
+    try {
+      return localStorage.getItem(LANG_STORAGE_KEY);
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function storeLanguage(lang) {
+    try {
+      localStorage.setItem(LANG_STORAGE_KEY, lang);
+    } catch (e) {}
+  }
+
+  function applyPlatform(currentPlatform) {
+    if (!currentPlatform) return;
+
+    root.setAttribute("data-platform", currentPlatform);
+    document.querySelectorAll("[data-platform-hide]").forEach(function (el) {
+      var platforms = el.getAttribute("data-platform-hide").split(/\s+/);
+      if (platforms.indexOf(currentPlatform) !== -1) el.hidden = true;
+    });
+  }
+
+  function translate(key) {
+    var dict = dictionaries[currentLanguage] || {};
+    var fallback = dictionaries["zh-CN"] || {};
+    return Object.prototype.hasOwnProperty.call(dict, key) ? dict[key] : fallback[key] || "";
+  }
+
+  function applyLanguage(lang) {
+    if (!dictionaries[lang]) return;
+
+    currentLanguage = lang;
+    root.setAttribute("lang", lang);
+    root.setAttribute("data-lang", lang);
+
+    document.querySelectorAll("[data-i18n]").forEach(function (el) {
+      el.textContent = translate(el.getAttribute("data-i18n"));
+    });
+
+    document.querySelectorAll("[data-i18n-title]").forEach(function (el) {
+      document.title = translate(el.getAttribute("data-i18n-title"));
+    });
+
+    document.querySelectorAll("*").forEach(function (el) {
+      Array.prototype.slice.call(el.attributes).forEach(function (attr) {
+        if (attr.name.indexOf("data-i18n-attr-") !== 0) return;
+        var targetAttr = attr.name.slice("data-i18n-attr-".length);
+        el.setAttribute(targetAttr, translate(attr.value));
+      });
+    });
+
+    replaceBaseUrl();
+    applyConfigOverrides();
+    updateCopyButtons(false);
+    updateLanguageControls();
+  }
+
+  function applyConfigOverrides() {
+    if (cfg.title) document.title = cfg.title;
+    if (cfg.brandName) {
+      var brandName = document.querySelector(".brand-name");
+      if (brandName) brandName.textContent = cfg.brandName;
+    }
+    if (cfg.footerText) {
+      var footerText = document.querySelector(".footer-text");
+      if (footerText) footerText.textContent = cfg.footerText;
+    }
+  }
+
+  function replaceBaseUrl() {
+    if (!baseUrl || baseUrl === PLACEHOLDER) return;
+
+    var walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+    var targets = [];
+    var node;
+    while ((node = walker.nextNode())) {
+      if (node.nodeValue.indexOf(PLACEHOLDER) !== -1) targets.push(node);
+    }
+    targets.forEach(function (target) {
+      target.nodeValue = target.nodeValue.split(PLACEHOLDER).join(baseUrl);
+    });
+  }
+
+  function updateCopyButtons(copied) {
+    document.querySelectorAll(".copy-btn").forEach(function (btn) {
+      btn.textContent = translate(copied ? "ui.copied" : "ui.copy");
+      btn.setAttribute("aria-label", translate("ui.copyCode"));
+    });
+  }
+
+  function updateLanguageControls() {
+    var current = document.querySelector("[data-current-lang]");
+    if (current) current.textContent = currentLanguage === "zh-CN" ? "ZH" : "EN";
+
+    document.querySelectorAll("[data-set-lang]").forEach(function (btn) {
+      var active = btn.getAttribute("data-set-lang") === currentLanguage;
+      btn.classList.toggle("active", active);
+      btn.setAttribute("aria-current", active ? "true" : "false");
+    });
+  }
+
+  var languageToggle = document.getElementById("languageToggle");
+  var languageMenu = document.getElementById("languageMenu");
+
+  function closeLanguageMenu() {
+    if (!languageMenu || !languageToggle) return;
+    languageMenu.hidden = true;
+    languageToggle.setAttribute("aria-expanded", "false");
+  }
+
+  if (languageToggle && languageMenu) {
+    languageToggle.addEventListener("click", function () {
+      var open = languageMenu.hidden;
+      languageMenu.hidden = !open;
+      languageToggle.setAttribute("aria-expanded", open ? "true" : "false");
+    });
+
+    document.addEventListener("click", function (event) {
+      if (!event.target.closest(".language-switch")) closeLanguageMenu();
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeLanguageMenu();
+    });
+  }
+
+  document.querySelectorAll("[data-set-lang]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var lang = btn.getAttribute("data-set-lang");
+      if (!dictionaries[lang]) return;
+      storeLanguage(lang);
+      applyLanguage(lang);
+      closeLanguageMenu();
+    });
+  });
+
   var themeToggle = document.getElementById("themeToggle");
   function applyTheme(theme) {
     root.setAttribute("data-theme", theme);
-    try { localStorage.setItem("botapi-theme", theme); } catch (e) {}
+    try {
+      localStorage.setItem("botapi-theme", theme);
+    } catch (e) {}
   }
   if (themeToggle) {
     themeToggle.addEventListener("click", function () {
@@ -88,7 +212,6 @@
     });
   }
 
-  /* ---------- 代码 Tab 切换 ---------- */
   document.querySelectorAll("[data-tabs]").forEach(function (group) {
     var btns = group.querySelectorAll(".tab-btn");
     var panels = group.querySelectorAll(".tab-panel");
@@ -103,7 +226,6 @@
     });
   });
 
-  /* ---------- 一键复制（为每个代码面板注入按钮） ---------- */
   document.querySelectorAll(".tab-panel").forEach(function (panel) {
     var pre = panel.querySelector("pre");
     if (!pre) return;
@@ -112,17 +234,17 @@
     var btn = document.createElement("button");
     btn.className = "copy-btn";
     btn.type = "button";
-    btn.textContent = "复制";
-    btn.setAttribute("aria-label", "复制代码");
+    btn.textContent = translate("ui.copy");
+    btn.setAttribute("aria-label", translate("ui.copyCode"));
 
     btn.addEventListener("click", function () {
       var text = pre.innerText;
       var done = function () {
         btn.classList.add("copied");
-        btn.textContent = "已复制";
+        btn.textContent = translate("ui.copied");
         setTimeout(function () {
           btn.classList.remove("copied");
-          btn.textContent = "复制";
+          btn.textContent = translate("ui.copy");
         }, 1600);
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -142,11 +264,13 @@
     ta.style.opacity = "0";
     document.body.appendChild(ta);
     ta.select();
-    try { document.execCommand("copy"); done(); } catch (e) {}
+    try {
+      document.execCommand("copy");
+      done();
+    } catch (e) {}
     document.body.removeChild(ta);
   }
 
-  /* ---------- 移动端侧栏 ---------- */
   var sidebar = document.getElementById("sidebar");
   var backdrop = document.getElementById("sidebarBackdrop");
   var menuToggle = document.getElementById("menuToggle");
@@ -163,10 +287,9 @@
   }
   if (backdrop) backdrop.addEventListener("click", closeSidebar);
 
-  /* ---------- 滚动高亮 + 点击导航 ---------- */
   var links = Array.prototype.slice.call(document.querySelectorAll(".toc-link"));
   var sections = links
-    .map(function (l) { return document.querySelector(l.getAttribute("href")); })
+    .map(function (link) { return document.querySelector(link.getAttribute("href")); })
     .filter(Boolean);
 
   links.forEach(function (link) {
@@ -176,8 +299,8 @@
   });
 
   function setActive(id) {
-    links.forEach(function (l) {
-      l.classList.toggle("active", l.getAttribute("href") === "#" + id);
+    links.forEach(function (link) {
+      link.classList.toggle("active", link.getAttribute("href") === "#" + id);
     });
   }
 
@@ -187,14 +310,18 @@
       entries.forEach(function (entry) {
         visible[entry.target.id] = entry.isIntersecting ? entry.intersectionRatio : 0;
       });
-      var best = null, bestRatio = 0;
-      sections.forEach(function (s) {
-        var r = visible[s.id] || 0;
-        if (r > bestRatio) { bestRatio = r; best = s.id; }
+      var best = null;
+      var bestRatio = 0;
+      sections.forEach(function (section) {
+        var ratio = visible[section.id] || 0;
+        if (ratio > bestRatio) {
+          bestRatio = ratio;
+          best = section.id;
+        }
       });
       if (best) setActive(best);
     }, { rootMargin: "-20% 0px -65% 0px", threshold: [0, 0.25, 0.5, 1] });
 
-    sections.forEach(function (s) { observer.observe(s); });
+    sections.forEach(function (section) { observer.observe(section); });
   }
 })();
